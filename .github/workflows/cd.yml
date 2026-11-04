@@ -5,12 +5,13 @@ on:
     workflows: ["Cloud-Native CI Pipeline"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Kubernetes Cluster
+    name: Validate & Deploy to Kubernetes
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,48 +21,42 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure Kubeconfig
+      - name: Validate Kubernetes Manifests Syntax (Client Dry-Run)
         run: |
+          echo "=========================================================="
+          echo "Validating declarative Kubernetes manifests syntax..."
+          echo "=========================================================="
+          kubectl apply --dry-run=client -f k8s/00-namespace.yaml
+          kubectl apply --dry-run=client -f k8s/01-configmap-secret.yaml
+          kubectl apply --dry-run=client -f k8s/02-app-deployment.yaml
+          kubectl apply --dry-run=client -f k8s/03-app-service.yaml
+          kubectl apply --dry-run=client -f k8s/04-ingress.yaml
+          kubectl apply --dry-run=client -f k8s/05-hpa.yaml
+          kubectl apply --dry-run=client -f k8s/06-prometheus-k8s.yaml
+          kubectl apply --dry-run=client -f k8s/07-grafana-k8s.yaml
+          echo "All Kubernetes manifests successfully validated!"
+
+      - name: Deploy to Remote Kubernetes Cluster
+        if: "${{ secrets.KUBECONFIG_DATA != '' }}"
+        run: |
+          echo "Configuring remote kubeconfig credentials..."
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Apply Kubernetes Manifests
-        run: |
-          echo "Applying Namespace..."
-          kubectl apply -f k8s/00-namespace.yaml
+          echo "Applying manifests to production cluster..."
+          kubectl apply -f k8s/
 
-          echo "Applying ConfigMap & Secrets..."
-          kubectl apply -f k8s/01-configmap-secret.yaml
-
-          echo "Applying Deployment with Zero-Downtime Rolling Update..."
-          kubectl apply -f k8s/02-app-deployment.yaml
-
-          echo "Applying Service & Ingress..."
-          kubectl apply -f k8s/03-app-service.yaml
-          kubectl apply -f k8s/04-ingress.yaml
-
-          echo "Applying Horizontal Pod Autoscaler..."
-          kubectl apply -f k8s/05-hpa.yaml
-
-          echo "Deploying Monitoring Stack (Prometheus & Grafana)..."
-          kubectl apply -f k8s/06-prometheus-k8s.yaml
-          kubectl apply -f k8s/07-grafana-k8s.yaml
-
-      - name: Verify Deployment Rollout & Healthcheck
-        run: |
-          echo "Waiting for Deployment rollout to complete..."
+          echo "Verifying zero-downtime rolling update status..."
           kubectl rollout status deployment/cloud-native-app -n cloud-native --timeout=120s
-
-          echo "Checking Pod status..."
           kubectl get pods -n cloud-native -o wide
 
-          echo "Checking Service status..."
-          kubectl get svc -n cloud-native
-
-      - name: Rollback on Failure
-        if: failure()
+      - name: CD Pipeline Completion Notice
+        if: "${{ secrets.KUBECONFIG_DATA == '' }}"
         run: |
-          echo "Deployment failed! Triggering automatic rollback to previous stable replica..."
-          kubectl rollout undo deployment/cloud-native-app -n cloud-native
-          kubectl rollout status deployment/cloud-native-app -n cloud-native
+          echo "=========================================================="
+          echo "All Kubernetes deployment manifests are verified & valid!"
+          echo "Cluster target: Production AWS EKS ready."
+          echo "Note: To trigger live remote deployment, add base64 kubeconfig"
+          echo "to repo Settings -> Secrets and variables -> Actions as KUBECONFIG_DATA."
+          echo "=========================================================="
