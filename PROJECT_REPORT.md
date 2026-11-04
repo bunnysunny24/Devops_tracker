@@ -17,12 +17,14 @@ The implementation features an asynchronous Python/FastAPI microservice instrume
 
 ## 2. PROBLEM STATEMENT & OBJECTIVES
 
-### 2.1 Problem Statement
+### 2.1 Problem Statement (Exam Assessment Scenario - 3 Marks)
+> *"An e-commerce company faces frequent deployment failures, manual server setup, and downtime during releases."*
+
 Deploying microservice applications manually or without integrated monitoring leads to:
-- High Mean Time to Detect (MTTD) and Mean Time to Resolution (MTTR) during failures.
-- Inconsistent environments between development, staging, and production.
-- Production outages caused by untested code or unmonitored resource spikes.
-- Downtime during software upgrades and rollouts.
+- **Manual Server Setup:** Configuration drift, human error, and slow manual server configuration.
+- **Frequent Deployment Failures:** Untested code, security vulnerabilities, and dependency conflicts reaching production.
+- **Release Downtime:** Downtime during software upgrades and rollouts, interrupting customer checkout flows.
+- **Lack of Observability:** High Mean Time to Detect (MTTD) and Mean Time to Resolution (MTTR) during outages.
 
 ### 2.2 Project Objectives
 1. **Develop a Cloud-Native Microservice:** Provide business logic, health probes (`/healthz`, `/ready`), and OpenMetrics telemetry (`/metrics`).
