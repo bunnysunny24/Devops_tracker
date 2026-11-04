@@ -1,177 +1,199 @@
-# PROJECT REPORT: AUTOMATED CLOUD-NATIVE APPLICATION DEPLOYMENT WITH MONITORING
+# ACADEMIC PROJECT REPORT: AUTOMATED CLOUD-NATIVE APPLICATION DEPLOYMENT WITH MONITORING
 
-**Course / Module:** DevOps & Cloud Computing Engineering  
-**Project Title:** Automated Cloud-Native Application Deployment with Monitoring  
-**Target Environment:** Containerized Microservices, Kubernetes Orchestration, Cloud Infrastructure (AWS/Local)  
-**Status:** Completed & Validated  
+**Course / Module:** Essentials in Cloud and DevOps Engineering  
+**Curriculum Practicals:** Practical 5 (Cloud-Native Deployment & Monitoring) & Practical 6 (CI/CD Deployment Pipeline)  
+**Target Environment:** Containerized Microservices, Kubernetes Orchestration, Cloud Infrastructure (AWS EC2 / EKS / Local)  
+**Evaluation Marks:** 3 Marks + 3 Marks (6 Marks Total)  
+**Repository:** [https://github.com/bunnysunny24/Devops_tracker](https://github.com/bunnysunny24/Devops_tracker)  
+**Status:** Completed, Verified, and Validated  
 
 ---
 
 ## 1. ABSTRACT
 
-Modern software delivery paradigms demand high velocity, reliability, and resilience. Traditional monolithic deployments and static manual monitoring are incapable of providing high availability in ephemeral cloud environments. This project presents a complete, end-to-end DevOps framework that automates the deployment and observability of a cloud-native microservice architecture. 
+Modern software delivery paradigms demand high velocity, reliability, and resilience. Traditional monolithic deployments and static manual infrastructure management are incapable of providing high availability in ephemeral cloud environments. In high-traffic e-commerce systems, manual server configurations inevitably cause configuration drift, human error, and prolonged downtime during releases. 
 
-The implementation features an asynchronous Python/FastAPI microservice instrumented with OpenMetrics/Prometheus client libraries, containerized via a security-hardened multi-stage Docker build, orchestrated through declarative Kubernetes manifests and Helm charts, and continuously monitored through a dedicated Prometheus, Grafana, and Alertmanager stack. Infrastructure provisioning is codified via Terraform (IaC) for AWS Elastic Kubernetes Service (EKS). An automated Continuous Integration (CI) and Continuous Delivery (CD) pipeline with zero-downtime rolling deployments and automatic rollback verification ensures safe production releases.
+This project delivers a complete, end-to-end DevOps framework that resolves the operational challenges of an e-commerce platform by codifying the entire application lifecycle. The architecture features an asynchronous Python microservice instrumented with OpenMetrics/Prometheus client libraries, containerized through a multi-stage security-hardened Docker build, orchestrated via Kubernetes manifests utilizing zero-downtime rolling update strategies, and continuously monitored through Amazon CloudWatch, Prometheus, and Grafana. An automated 4-stage Continuous Integration and Continuous Delivery (CI/CD) pipeline on GitHub Actions and Jenkins validates code quality, performs Static Application Security Testing (SAST) with Trivy, packages container images, and manages automated rolling deployments.
 
 ---
 
 ## 2. PROBLEM STATEMENT & OBJECTIVES
 
-### 2.1 Problem Statement (Exam Assessment Scenario - 3 Marks)
+### 2.1 Problem Statement (Exam Assessment Scenario)
 > *"An e-commerce company faces frequent deployment failures, manual server setup, and downtime during releases."*
 
-Deploying microservice applications manually or without integrated monitoring leads to:
-- **Manual Server Setup:** Configuration drift, human error, and slow manual server configuration.
-- **Frequent Deployment Failures:** Untested code, security vulnerabilities, and dependency conflicts reaching production.
-- **Release Downtime:** Downtime during software upgrades and rollouts, interrupting customer checkout flows.
-- **Lack of Observability:** High Mean Time to Detect (MTTD) and Mean Time to Resolution (MTTR) during outages.
+Deploying microservice applications manually or without integrated monitoring leads to three critical business bottlenecks:
+1. **Manual Server Setup:** System administrators manually connect to virtual machines, update packages, install dependencies, and configure web servers. This practice causes configuration drift, makes scaling unpredictable, and introduces significant human error.
+2. **Frequent Deployment Failures:** Defective code, untested regressions, and unmonitored dependencies slip into production environments due to a lack of automated testing and security gates.
+3. **Release Downtime:** Software updates require restarting application processes or rebooting servers. In e-commerce, even a 30-second outage during peak traffic drops active user carts, interrupts checkout transactions, and causes immediate revenue loss.
 
 ### 2.2 Project Objectives
-1. **Develop a Cloud-Native Microservice:** Provide business logic, health probes (`/healthz`, `/ready`), and OpenMetrics telemetry (`/metrics`).
-2. **Hardened Containerization:** Build a slim, multi-stage, non-root Docker container image.
-3. **Automated Infrastructure as Code (IaC):** Declaratively provision cloud Kubernetes clusters using Terraform.
-4. **Cloud-Native Orchestration:** Manage self-healing, rolling updates, and Horizontal Pod Autoscaling (HPA) using Kubernetes manifests and Helm 3.
-5. **Continuous Observability & Dynamic Alerting:** Scrape real-time performance indicators (RPS, Latency percentiles, Error rates, CPU/Memory) via Prometheus, display rich live visual dashboards in Grafana, and dispatch actionable alerts via Alertmanager.
-6. **Automated CI/CD Pipeline:** Implement GitHub Actions workflows for static code linting, unit testing, SAST security vulnerability scanning (Trivy), image building, and automated deployment.
+1. **Develop an E-Commerce Microservice:** Provide catalog browsing, healthcheck probes (`/health`, `/ready`), and OpenMetrics telemetry (`/metrics`).
+2. **Implement Security-Hardened Containerization:** Package the application using a minimal, non-root multi-stage Docker build.
+3. **Automate Infrastructure Provisioning:** Declaratively provision cloud infrastructure (AWS EC2, security groups, IAM roles, and CloudWatch alarms) using Terraform.
+4. **Automate Server Configuration:** Codify server setup and Docker deployment using Ansible playbooks executing over SSH.
+5. **Implement Zero-Downtime Deployment:** Orchestrate container deployments on Kubernetes using a RollingUpdate strategy (`maxSurge: 1, maxUnavailable: 0`) and Horizontal Pod Autoscaling (HPA).
+6. **Establish Full-Stack Observability:** Stream logs and monitor hypervisor metrics via Amazon CloudWatch while capturing granular application telemetry (RPS, latency percentiles, error rates) via Prometheus and Grafana with real-time alerting.
+7. **Construct an Automated CI/CD Pipeline:** Enforce quality gates through GitHub Actions and Jenkins pipelines incorporating unit tests, Trivy SAST vulnerability scanning, and automated deployment.
 
 ---
 
-## 3. ARCHITECTURAL DESIGN & WORKFLOW
+## 3. SYSTEM ARCHITECTURE & IMPLEMENTATION DETAILS
 
 ```mermaid
-flowchart LR
-    A[Code Push / PR] --> B[CI: Pytest & SAST Scan]
-    B --> C[Docker Multi-Stage Build]
-    C --> D[Image Registry]
-    D --> E[CD / ArgoCD Deployment]
-    E --> F[Kubernetes Pods & HPA]
-    F -->|Telemetry Scraping| G[Prometheus]
-    G --> H[Grafana Dashboards]
-    G --> I[Alertmanager Webhooks]
+flowchart TD
+    subgraph SCM["Version Control (GitHub)"]
+        DEV["Developer Commit / PR"] --> GIT["GitHub Repo: bunnysunny24/Devops_tracker"]
+    end
+
+    subgraph PIPELINE["Automated 4-Stage CI/CD Pipeline"]
+        GIT --> CI["GitHub Actions & Jenkins"]
+        CI --> T1["Stage 1: Lint & Pytest Unit Tests"]
+        T1 --> T2["Stage 2: Trivy SAST Security Scan"]
+        T2 --> T3["Stage 3: Multi-Stage Docker Build"]
+        T3 --> T4["Stage 4: Kubernetes Continuous Deployment"]
+    end
+
+    subgraph INFRA["Automated Cloud Infrastructure"]
+        IAC["Terraform (IaC)"] --> EC2["AWS EC2 Ubuntu Server"]
+        ANSIBLE["Ansible Playbook"] --> CONFIG["Automated Docker & Server Setup"]
+        T4 --> K8S["Kubernetes Pod Replicas (RollingUpdate maxSurge=1)"]
+        HPA["Horizontal Pod Autoscaler"] -.->|Scales 2-10 Replicas| K8S
+    end
+
+    subgraph OBSERVE["Dual-Tier Observability Stack"]
+        K8S -->|Metrics /metrics| PROM["Prometheus Telemetry Engine (5s interval)"]
+        PROM --> GRAFANA["Grafana Visual Dashboards (:3000)"]
+        PROM --> AM["Alertmanager (:9093)"]
+        EC2 --> CW["Amazon CloudWatch (CPU > 70% Alarm & Log Group)"]
+    end
+
+    USER["Customer Browser"] --> K8S
+    SRE["SRE / DevOps Engineer"] --> GRAFANA
+    SRE --> PROM
 ```
 
-### 3.1 Three Pillars of Observability Implemented
-1. **Metrics:** Real-time numerical timeseries data tracking request throughput, error counts, latency histograms, and system resource consumption.
-2. **Health Checks:** Kubernetes liveness and readiness probes checking runtime responsiveness and routing traffic only when ready.
-3. **Alerting Rules:** Proactive notification triggers when error thresholds (>5%) or latency limits (p95 > 500ms) are breached.
-
----
-
-## 4. DETAILED MODULE IMPLEMENTATION
-
-### Module 1: Cloud-Native Application Layer (`app/`)
-- **Framework:** FastAPI with Python 3.11 for asynchronous, high-throughput REST APIs.
-- **Metrics Instrumentation:**
-  - `http_requests_total`: Counter metric labeled with HTTP method, endpoint, and status code.
-  - `http_request_duration_seconds`: Histogram metric recording latency percentiles across standard buckets.
-  - `http_active_requests`: Gauge metric tracking in-flight concurrent connections.
-  - `app_system_cpu_usage_percent` & `app_system_memory_usage_bytes`: Real-time system resource tracking.
-- **Chaos Testing Hooks:**
-  - `/api/simulate/error`: Injects 500 internal server errors to validate alert rule activation.
-  - `/api/simulate/slow`: Introduces artificial delays to test latency alerts.
-  - `/api/simulate/load`: Creates CPU spikes to verify Horizontal Pod Autoscaler (HPA) scale-out behavior.
+### Module 1: Application Layer (`app/`)
+The application is constructed in Python (supporting both FastAPI for high-throughput production workloads and Flask for standalone demonstrations). It serves an e-commerce catalog featuring items such as laptops, headphones, and smartphones. The application implements standard healthcheck endpoints:
+- `/health`: Liveness probe verifying process responsiveness.
+- `/ready`: Readiness probe verifying internal database and connection pool readiness.
+- `/metrics`: Exposes real-time OpenMetrics formatted telemetry.
+- `/test-error`: Injects deliberate HTTP 500 errors to validate alert rule activation.
 
 ### Module 2: Containerization & Security Hardening (`app/Dockerfile`)
-- **Multi-Stage Architecture:**
-  - *Build Stage:* Compiles dependencies and generates Python wheels in an isolated builder container.
-  - *Runtime Stage:* Minimal slim base image containing only compiled dependencies and application code.
-- **Security Hardening:**
-  - Runs under a dedicated, unprivileged non-root user (`appuser`, UID `10001`).
-  - Container health check integrated into the Docker manifest.
+The Dockerfile implements a two-stage build pattern:
+- **Builder Stage:** Uses `python:3.11-slim`, installs build tools, and compiles Python dependencies into local user wheels.
+- **Runner Stage:** Uses a minimal base image, copies only pre-compiled wheels and source code, creates an unprivileged user (`appuser`, UID `10001`), and defines container health checks. This reduces the attack surface and ensures compliance with container security standards.
 
 ### Module 3: Infrastructure as Code (`terraform/`)
-- **Declarative AWS EKS Provisioning:**
-  - Automated Virtual Private Cloud (VPC) with public subnets across multiple availability zones.
-  - AWS Internet Gateway (IGW) and Route Table associations.
-  - EKS Cluster Control Plane with required IAM roles (`AmazonEKSClusterPolicy`).
-  - EKS Managed Node Group with auto-scaling worker nodes (min: 2, desired: 3, max: 6).
+Infrastructure provisioning is codified using Terraform across two configurations:
+- **AWS EC2 & CloudWatch (`terraform/ec2_cloudwatch/main.tf`):** Defines an EC2 Ubuntu instance, security groups with ingress rules for HTTP (80), SSH (22), Jenkins (8080), Prometheus (9090), and Grafana (3000), an IAM role with `CloudWatchAgentServerPolicy`, a CloudWatch log group (`/practical5/application`), and a metric alarm triggering when average CPU exceeds 70% for two consecutive evaluation periods.
+- **AWS EKS Cluster (`terraform/main.tf`):** Provisions an Elastic Kubernetes Service (EKS) cluster with VPC, public subnets, and auto-scaling node groups.
 
-### Module 4: Kubernetes Orchestration & Helm Packaging (`k8s/` & `helm/`)
-- **Zero-Downtime Deployments:**
-  - `RollingUpdate` strategy configured with `maxSurge: 1` and `maxUnavailable: 0` ensures 100% service uptime during upgrades.
-  - Hardened security context enforcing `runAsNonRoot: true`.
-  - Resource requests and limits configured for predictable scheduler placement.
-- **Horizontal Pod Autoscaling (HPA):**
-  - Dynamically scales application replicas between 2 and 10 based on CPU (70%) and Memory (80%) utilization.
-- **Helm 3 Chart:**
-  - Fully parameterized chart allowing easy customization of replicas, image tags, ingress hosts, and monitoring annotations.
+### Module 4: Configuration Automation (`ansible/`)
+Ansible automates server configuration through an agentless architecture. The inventory file (`ansible/inventory.ini`) specifies the target server IP and SSH credentials. The playbook (`ansible/deploy.yml`) performs idempotent tasks:
+1. Updates package repositories.
+2. Installs Docker Engine, CLI, containerd, and Compose plugins.
+3. Grants non-root Docker privileges to the `ubuntu` user.
+4. Clones the application repository from GitHub.
+5. Launches the container stack using Docker Compose.
 
-### Module 5: Observability & Monitoring Engine (`monitoring/`)
-- **Prometheus:**
-  - Scrapes metrics every 5 seconds.
-  - Evaluates alerting rules continuously.
-  - Includes Kubernetes Service Discovery (`kubernetes_sd_configs`) for automatic pod discovery in cluster environments.
-- **Alertmanager:**
-  - Manages alert deduplication, grouping, and dispatching.
-  - Triggers alerts for:
-    1. `ServiceDown`: Fired when instance uptime evaluates to 0 for >30s.
-    2. `HighHttpErrorRate`: Fired when HTTP 5xx errors exceed 5% of total traffic.
-    3. `HighRequestLatency`: Fired when p95 response time exceeds 500ms.
-    4. `HighCpuUsage`: Fired when host CPU exceeds 85%.
-- **Grafana Visualization:**
-  - Pre-configured datasource and JSON dashboard layout.
-  - Visualizes RPS by endpoint, HTTP status breakdown, p50/p90/p99 latency timeseries, CPU/Memory telemetry, and application status tiles.
+### Module 5: Zero-Downtime Kubernetes Orchestration (`k8s/`)
+Kubernetes manifests manage container lifecycle and scaling:
+- **Deployment (`k8s/02-app-deployment.yaml`):** Implements `RollingUpdate` with `maxSurge: 1` and `maxUnavailable: 0`. During an update, Kubernetes launches a new pod replica first and redirects traffic to it only after its readiness probe passes. Once verified, one old pod replica is gracefully terminated, preventing release downtime.
+- **Autoscaling (`k8s/05-hpa.yaml`):** Horizontal Pod Autoscaler dynamically scales pod replicas between 2 and 10 based on CPU (70%) and Memory (80%) thresholds.
 
-### Module 6: Automated CI/CD & GitOps (`.github/` & `gitops/`)
-- **CI Pipeline (`ci.yml`):**
-  - Triggers on commit/pull request.
-  - Runs flake8 linting and pytest automated unit tests.
-  - Executes Trivy SAST vulnerability scan.
-  - Builds and tags Docker image and publishes to container registry.
-- **CD Pipeline (`cd.yml`):**
-  - Triggers on CI success.
-  - Deploys manifests to Kubernetes.
-  - Executes `kubectl rollout status` verification.
-  - Automatically triggers `kubectl rollout undo` if the deployment encounters errors.
-- **GitOps (`argocd-application.yaml`):**
-  - Declarative sync policy with automated self-healing and pruning.
+### Module 6: Observability & Alerting Stack (`monitoring/`)
+- **Prometheus (`monitoring/prometheus/`):** Scrapes application telemetry every 5 seconds. Evaluates alerting rules (`alert.rules.yml`) for `ServiceDown`, `HighHttpErrorRate` (>5% errors over 1 minute), and `HighRequestLatency` (p95 > 500ms).
+- **Grafana (`monitoring/grafana/`):** Automatically provisions Prometheus datasources and renders production dashboards visualizing request rate (RPS), error percentages, and latency percentiles.
+- **Alertmanager (`monitoring/alertmanager/`):** Manages alert deduplication, grouping, and notification dispatching.
+
+### Module 7: Automated CI/CD Pipeline (`.github/workflows/ci.yml` & `Jenkinsfile`)
+The pipeline runs on every code commit across 4 sequential stages:
+1. **Lint & Unit Tests:** Runs flake8 and 7 automated Pytest test cases.
+2. **Security Vulnerability Scan (SAST):** Scans the codebase using Aquasecurity Trivy.
+3. **Build & Package:** Builds the multi-stage Docker image and pushes it to GitHub Container Registry (GHCR).
+4. **Continuous Deployment:** Validates Kubernetes declarative manifests and verifies deployment readiness.
 
 ---
 
-## 5. EXPERIMENTAL VERIFICATION & RESULTS
+## 4. EXPERIMENTAL VERIFICATION & TEST RESULTS
 
-### 5.1 Unit & Integration Test Results
-All automated test suites executed via pytest passed successfully:
+### 4.1 Unit Testing & Code Coverage
+The test suite was executed using Pytest:
 ```text
 ============================= test session starts =============================
-app/tests/test_main.py::test_healthz_endpoint PASSED                    [ 14%]
-app/tests/test_main.py::test_ready_endpoint PASSED                      [ 28%]
-app/tests/test_main.py::test_prometheus_metrics_endpoint PASSED        [ 42%]
-app/tests/test_main.py::test_get_items PASSED                           [ 57%]
-app/tests/test_main.py::test_create_and_delete_item PASSED              [ 71%]
-app/tests/test_main.py::test_stats_endpoint PASSED                      [ 85%]
-app/tests/test_main.py::test_simulate_error PASSED                      [100%]
-============================== 7 passed in 0.42s ==============================
+platform win32 -- Python 3.13.11, pytest-9.0.2
+rootdir: D:\Bunny\Sanju_dev_ops_5
+plugins: anyio-4.14.2, cov-7.1.0
+collected 7 items
+
+app/tests/test_main.py::test_healthz_endpoint PASSED                     [ 14%]
+app/tests/test_main.py::test_ready_endpoint PASSED                       [ 28%]
+app/tests/test_main.py::test_prometheus_metrics_endpoint PASSED          [ 42%]
+app/tests/test_main.py::test_get_items PASSED                            [ 57%]
+app/tests/test_main.py::test_create_and_delete_item PASSED               [ 71%]
+app/tests/test_main.py::test_stats_endpoint PASSED                       [ 85%]
+app/tests/test_main.py::test_simulate_error PASSED                       [100%]
+
+============================== 7 passed in 0.61s ==============================
 ```
 
-### 5.2 Chaos & Alerting Validation
-1. **500 Error Injection Test:** Triggered via `/api/simulate/error?code=500`. Within 30 seconds, the PromQL expression `sum(rate(http_requests_total{status_code=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) * 100 > 5` triggered the `HighHttpErrorRate` alert in Prometheus.
-2. **Latency Injection Test:** Triggered via `/api/simulate/slow?seconds=1.5`. The `HighRequestLatency` alert moved from `Pending` to `Firing` state as p95 latency exceeded the 500ms threshold.
-3. **Autoscaling Test:** CPU load simulation caused HPA to detect >70% utilization, automatically triggering Kubernetes to scale replica count from 3 up to 5 pods.
+### 4.2 Traffic & Alert Verification
+Traffic was generated using `scripts/simulate_traffic.py` across 50 simulated customer interactions:
+- Healthy requests (`200 OK`) and new item creations (`201 Created`) registered in Prometheus.
+- Simulated 500 errors injected via `/test-error`.
+- Prometheus evaluated the `HighHttpErrorRate` rule within 30 seconds:
+  - Expression: `sum(rate(http_requests_total{status_code=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) * 100 > 5`
+  - Alert State: Successfully transitioned from `Inactive` to **`FIRING`**.
 
 ---
 
-## 6. VIVA VOCE / INTERVIEW QUESTIONS & ANSWERS
+## 5. COMPLETE URL DIRECTORY
 
-### Q1: What makes an application "Cloud-Native"?
-**Answer:** A cloud-native application is specifically architected to leverage the advantages of cloud computing models. It is built as loosely coupled microservices, packaged in lightweight containers, managed through dynamic orchestrators (like Kubernetes), governed by automated CI/CD pipelines, and monitored through integrated observability stacks.
+| Component | Exact URL | Credentials | Role |
+|---|---|---|---|
+| **E-Commerce Storefront** | [http://localhost:8000](http://localhost:8000) | None | Live shopping web interface and telemetry triggers |
+| **Health Probe** | [http://localhost:8000/health](http://localhost:8000/health) | None | Application liveness verification endpoint |
+| **Products API** | [http://localhost:8000/api/products](http://localhost:8000/api/products) | None | Catalog data REST API |
+| **Raw Metrics** | [http://localhost:8000/metrics](http://localhost:8000/metrics) | None | Standard OpenMetrics telemetry stream |
+| **Chaos Test** | [http://localhost:8000/test-error](http://localhost:8000/test-error) | None | Deliberate HTTP 500 error injection for alert testing |
+| **Prometheus Targets** | [http://localhost:9090/targets](http://localhost:9090/targets) | None | Verifies all telemetry scrape targets are UP |
+| **Prometheus Alerts** | [http://localhost:9090/alerts](http://localhost:9090/alerts) | None | Shows live alerting rules and firing status |
+| **Grafana Dashboards** | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` | Real-time visual graphs for RPS, Latency, and CPU |
+| **Alertmanager** | [http://localhost:9093](http://localhost:9093) | None | Alert routing and incident dispatcher |
+| **GitHub Actions** | [Actions Tab](https://github.com/bunnysunny24/Devops_tracker/actions) | None | Proves automated 4-stage pipeline is 100% green |
 
-### Q2: Why is multi-stage Docker build important in production?
-**Answer:** Multi-stage builds separate the build environment (compilers, build tools, package managers) from the final runtime image. This significantly reduces the final image size (e.g., from 1 GB down to <150 MB), eliminates attack vectors by removing unnecessary build tools, and enhances security by ensuring only runtime artifacts are deployed.
+---
 
-### Q3: What is the difference between Liveness and Readiness probes?
-**Answer:**
-- **Liveness Probe:** Determines if the container is still running and healthy. If the liveness probe fails, Kubernetes kills the pod and restarts a fresh instance.
-- **Readiness Probe:** Determines if the container is ready to accept incoming user traffic. If the readiness probe fails, Kubernetes temporarily isolates the pod from Service endpoints so no traffic is routed to it until it recovers.
+## 6. VIVA VOCE EXAMINATION QUESTIONS & ANSWERS
 
-### Q4: How does Prometheus collect metrics from applications?
-**Answer:** Prometheus uses a **pull-based** model. It periodically queries (scrapes) HTTP endpoints (typically `/metrics`) exposed by target services at configured intervals (`scrape_interval`). Applications use client libraries to format metrics in the standardized OpenMetrics text format.
+#### Q1. Why is Infrastructure as Code (IaC) preferred over manual AWS Console configuration?
+**Answer:** Manual console configuration is subjective to human error, lacks version tracking, and leads to configuration drift across environments. With Terraform, infrastructure is defined declaratively as code, allowing environments to be created, audited, versioned, and destroyed programmatically in an automated and repeatable manner.
 
-### Q5: How does the Kubernetes RollingUpdate strategy achieve zero downtime?
-**Answer:** During a RollingUpdate with `maxSurge: 1` and `maxUnavailable: 0`, Kubernetes spins up a new pod with the updated image version before terminating any existing pods. Traffic is only redirected to the new pod after its readiness probe passes. Once verified, one old pod is gracefully terminated. This process repeats until all replicas are upgraded, ensuring zero service disruption.
+#### Q2. Explain the operational difference between Terraform and Ansible.
+**Answer:** Terraform is an infrastructure orchestration tool that provisions cloud infrastructure components (virtual machines, networks, subnets, and firewalls) via cloud APIs. Ansible is a configuration management tool that configures software inside existing machines over SSH (installing Docker, configuring users, managing service files).
+
+#### Q3. What is the difference between a Docker image and a Docker container?
+**Answer:** A Docker image is a static, read-only template containing application code, runtime libraries, and environment variables. A container is a dynamic, stateful runtime instance created from that image executing as an isolated process on the host OS.
+
+#### Q4. Why are multi-stage Docker builds utilized?
+**Answer:** Multi-stage builds decouple the build environment from the production image. Build tools and package managers remain in the build stage, while only compiled artifacts are transferred to the runtime stage. This slashes image size from ~1 GB to <150 MB and enhances security by running as an unprivileged user (`appuser`).
+
+#### Q5. How does Kubernetes prevent downtime during software releases?
+**Answer:** Using the `RollingUpdate` strategy with `maxSurge: 1` and `maxUnavailable: 0`. Kubernetes provisions a new container replica with the updated image version before terminating old replicas. Traffic is routed to the new container only after its readiness probe passes, ensuring uninterrupted customer access.
+
+#### Q6. What was the cause of the Jenkins Docker build failure and how was it resolved?
+**Answer:** Jenkins failed with `permission denied while trying to connect to the docker API at unix:///var/run/docker.sock` because the `jenkins` user lacked permissions on the Docker UNIX socket. It was resolved by appending the Jenkins user to the `docker` group:
+```bash
+sudo usermod -aG docker jenkins && sudo systemctl restart jenkins
+```
+
+#### Q7. Why combine Amazon CloudWatch and Prometheus/Grafana?
+**Answer:** CloudWatch monitors hypervisor-level host infrastructure metrics (EC2 CPU, disk, network) and AWS-level alarms. Prometheus and Grafana provide high-frequency (5-second pull) application performance monitoring (APM) tracking request rates, percentile latencies, and 5xx error percentages.
 
 ---
 
 ## 7. CONCLUSION
 
-The project successfully delivers an end-to-end Automated Cloud-Native Application Deployment with Continuous Monitoring. By uniting containerization, Infrastructure as Code, Kubernetes orchestration, Prometheus/Grafana observability, and automated CI/CD pipelines, the architecture achieves high reliability, instant fault detection, zero-downtime releases, and automated scalability.
+The project successfully delivers an automated, resilient cloud-native e-commerce deployment with comprehensive monitoring. By integrating Terraform, Ansible, Docker, Kubernetes, Prometheus, Grafana, CloudWatch, and automated CI/CD pipelines, all operational bottlenecks—manual setup, deployment failures, and release downtime—are permanently eliminated.
