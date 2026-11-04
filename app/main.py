@@ -23,13 +23,13 @@ from prometheus_client import (
 )
 
 # App initialization
-APP_NAME = os.getenv("APP_NAME", "CloudNativePulse")
+APP_NAME = os.getenv("APP_NAME", "CloudCommerce - Cloud-Native E-Commerce Platform")
 APP_VERSION = os.getenv("APP_VERSION", "v1.0.0")
 APP_ENV = os.getenv("APP_ENV", "production")
 
 app = FastAPI(
-    title=APP_NAME,
-    description="Automated Cloud-Native Application with Observability & Monitoring",
+    title="CloudCommerce",
+    description="Automated Cloud-Native E-Commerce Application Deployment with Monitoring",
     version=APP_VERSION,
 )
 
@@ -95,23 +95,23 @@ class Item(BaseModel):
 database: List[dict] = [
     {
         "id": 1,
-        "title": "Cloud-Native Microservice Architecture",
-        "description": "Dockerized container ready for Kubernetes deployment",
-        "status": "completed",
+        "title": "Cloud-Native Microservices Suite",
+        "description": "High-availability containerized e-commerce backend service",
+        "status": "in-stock",
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     },
     {
         "id": 2,
-        "title": "Prometheus & Grafana Observability",
-        "description": "Scrapes application metrics and system stats with dynamic dashboards",
-        "status": "in-progress",
+        "title": "Real-Time Payment Gateway Worker",
+        "description": "PCI-DSS compliant zero-downtime transactional checkout worker",
+        "status": "in-stock",
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     },
     {
         "id": 3,
-        "title": "Automated CI/CD Pipeline",
-        "description": "GitHub Actions + Docker Hub + ArgoCD GitOps workflow",
-        "status": "pending",
+        "title": "Prometheus & CloudWatch Telemetry Agent",
+        "description": "Continuous APM metrics aggregator with real-time alerting",
+        "status": "active",
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     },
 ]
@@ -170,9 +170,9 @@ async def prometheus_middleware(request: Request, call_next):
 async def read_root(request: Request):
     if templates:
         return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
+            request=request,
+            name="index.html",
+            context={
                 "app_name": APP_NAME,
                 "app_version": APP_VERSION,
                 "app_env": APP_ENV,
