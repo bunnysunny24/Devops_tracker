@@ -189,11 +189,12 @@ async def get_metrics():
     """Prometheus metrics endpoint exposed for scraping."""
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-# Kubernetes Health & Readiness Probes
+# Kubernetes & CloudWatch Health Probes
 @app.get("/healthz", tags=["Health"])
+@app.get("/health", tags=["Health"])
 async def liveness_probe():
-    """Liveness probe: verifies the process is running."""
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat(), "version": APP_VERSION}
+    """Health probe: verifies the process is running."""
+    return {"status": "healthy", "application": "E-Commerce Cloud App", "version": APP_VERSION}
 
 @app.get("/ready", tags=["Health"])
 async def readiness_probe():
@@ -201,7 +202,8 @@ async def readiness_probe():
     return {"status": "ready", "traffic_enabled": True, "active_connections": len(database)}
 
 # Business API Endpoints
-@app.get("/api/items", response_model=List[dict], tags=["Items"])
+@app.get("/api/items", response_model=List[dict], tags=["Products"])
+@app.get("/api/products", response_model=List[dict], tags=["Products"])
 async def list_items():
     return database
 
@@ -241,8 +243,9 @@ async def simulate_slow_response(seconds: float = 1.5):
     return {"message": f"Delayed response after {seconds} seconds", "simulated_latency": seconds}
 
 @app.get("/api/simulate/error", tags=["Simulation"])
+@app.get("/test-error", tags=["Simulation"])
 async def simulate_error(code: int = 500):
-    """Simulates application 5xx errors to test Alertmanager trigger."""
+    """Simulates application 5xx errors to test Alertmanager & CloudWatch trigger."""
     SIMULATED_ERROR_COUNTER.labels(error_type=f"HTTP_{code}").inc()
     raise HTTPException(
         status_code=code,
