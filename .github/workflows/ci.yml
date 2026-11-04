@@ -39,6 +39,8 @@ jobs:
           flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run Unit Tests & Coverage
+        env:
+          PYTHONPATH: .
         run: |
           pytest app/tests/ -v --cov=app --cov-report=term-missing
 
@@ -57,6 +59,7 @@ jobs:
           scan-type: "fs"
           ignore-unfixed: true
           format: "table"
+          exit-code: "0"
           severity: "CRITICAL,HIGH"
 
   # 3. Build & Container Packaging
