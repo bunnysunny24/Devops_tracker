@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} - Cloud-Native Control Plane</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <span class="icon">⚡</span>
+            <div class="logo-text">
+                <h2>{{ app_name }}</h2>
+                <span class="sub">Cloud-Native Observability Suite</span>
+            </div>
+        </div>
+        <div class="header-badges">
+            <span class="badge env-badge">{{ app_env | upper }}</span>
+            <span class="badge ver-badge">{{ app_version }}</span>
+            <span class="badge status-badge live">● SERVICE HEALTHY</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Metric Overview Cards -->
+        <section class="metrics-grid">
+            <div class="card metric-card">
+                <div class="metric-title">CPU Utilization</div>
+                <div class="metric-val" id="cpu-stat">-- %</div>
+                <div class="metric-sub">Host / Container core load</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-title">Memory Working Set</div>
+                <div class="metric-val" id="mem-stat">-- MB</div>
+                <div class="metric-sub" id="mem-total">of -- MB limit</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-title">Monitored Items</div>
+                <div class="metric-val" id="items-stat">{{ items | length }}</div>
+                <div class="metric-sub">Active microservice entities</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-title">Prometheus Telemetry</div>
+                <div class="metric-val text-green">ACTIVE</div>
+                <div class="metric-sub"><a href="/metrics" target="_blank">View /metrics stream →</a></div>
+            </div>
+        </section>
+
+        <!-- Live Operations & Load Simulation Controls -->
+        <section class="card controls-section">
+            <div class="section-header">
+                <h3>🚀 Observability & Chaos Testing Simulation</h3>
+                <p>Trigger requests to verify Prometheus metrics scraping, Grafana dashboards, and Alertmanager notification alerts.</p>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-primary" onclick="triggerRequest('/healthz')">Health Check (/healthz)</button>
+                <button class="btn btn-primary" onclick="triggerRequest('/ready')">Readiness Check (/ready)</button>
+                <button class="btn btn-warning" onclick="triggerRequest('/api/simulate/slow?seconds=1.2')">Simulate High Latency (1.2s)</button>
+                <button class="btn btn-danger" onclick="triggerRequest('/api/simulate/error?code=500')">Simulate 500 Error (Alert Test)</button>
+                <button class="btn btn-accent" onclick="triggerRequest('/api/simulate/load?iterations=2000000')">Simulate CPU Spike (HPA Trigger)</button>
+            </div>
+            <div class="console-box" id="test-output">
+                <code>Ready for requests. Click any button above to generate telemetry events.</code>
+            </div>
+        </section>
+
+        <!-- Microservices Inventory Section -->
+        <section class="card items-section">
+            <div class="section-header flex-between">
+                <div>
+                    <h3>📦 Cloud Deployment Components</h3>
+                    <p>Current architecture entities registered in the deployment state.</p>
+                </div>
+                <button class="btn btn-sm btn-outline" onclick="openModal()">+ Add Entity</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body">
+                        {% for item in items %}
+                        <tr>
+                            <td>#{{ item.id }}</td>
+                            <td><strong>{{ item.title }}</strong></td>
+                            <td>{{ item.description }}</td>
+                            <td>
+                                <span class="tag tag-{{ item.status }}">{{ item.status | upper }}</span>
+                            </td>
+                            <td><small class="text-muted">{{ item.created_at }}</small></td>
+                            <td>
+                                <button class="btn-icon" onclick="deleteItem({{ item.id }})">🗑️</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Architecture Quicklinks -->
+        <section class="card architecture-links">
+            <h3>🔗 Observability Stack Navigation</h3>
+            <div class="links-grid">
+                <div class="nav-tile">
+                    <h4>Prometheus UI</h4>
+                    <p>Scrapes metrics at 5s intervals. Queries PromQL alerts.</p>
+                    <a href="http://localhost:9090" target="_blank" class="tile-link">Open Prometheus :9090 →</a>
+                </div>
+                <div class="nav-tile">
+                    <h4>Grafana Dashboards</h4>
+                    <p>Real-time visual graphs for RPS, Error Rate, and CPU/Memory.</p>
+                    <a href="http://localhost:3000" target="_blank" class="tile-link">Open Grafana :3000 →</a>
+                </div>
+                <div class="nav-tile">
+                    <h4>Alertmanager</h4>
+                    <p>High Latency & High 5xx Error webhook alerts dispatch.</p>
+                    <a href="http://localhost:9093" target="_blank" class="tile-link">Open Alertmanager :9093 →</a>
+                </div>
+                <div class="nav-tile">
+                    <h4>Raw Metrics Endpoint</h4>
+                    <p>Standard OpenMetrics/Prometheus formatted export.</p>
+                    <a href="/metrics" target="_blank" class="tile-link">Open /metrics →</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Create Item Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3>Add New Architecture Entity</h3>
+            <form id="addItemForm" onsubmit="handleCreateItem(event)">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="itemTitle" required placeholder="e.g., Redis Cache Service">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="itemDesc" required placeholder="Brief description of role in cluster"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="itemStatus">
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In-Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Save Entity</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>Automated Cloud-Native Application Deployment with Continuous Monitoring & Observability | DevOps Engineering Project</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

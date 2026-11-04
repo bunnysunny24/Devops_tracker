@@ -1,0 +1,46 @@
+groups:
+  - name: cloud_native_application_alerts
+    rules:
+      # 1. Service Availability Alert
+      - alert: ServiceDown
+        expr: up{job="cloud-native-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Cloud-Native Service is DOWN (instance {{ $labels.instance }})"
+          description: "Service has been unreachable for more than 30 seconds. Immediate incident response required."
+
+      # 2. High 5xx Error Rate Alert
+      - alert: HighHttpErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) * 100 > 5
+        for: 30s
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High HTTP 5xx error rate detected (> 5%)"
+          description: "The percentage of HTTP 5xx errors on {{ $labels.endpoint }} is {{ $value | printf \"%.2f\" }}% over the last minute."
+
+      # 3. High Request Latency Alert
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, endpoint)) > 0.5
+        for: 45s
+        labels:
+          severity: warning
+          team: performance
+        annotations:
+          summary: "High p95 Latency (> 500ms)"
+          description: "Endpoint {{ $labels.endpoint }} 95th percentile latency is {{ $value | printf \"%.3f\" }}s."
+
+      # 4. CPU High Usage
+      - alert: HighCpuUsage
+        expr: app_system_cpu_usage_percent > 85
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "High Container CPU Usage (> 85%)"
+          description: "CPU load on application host is currently {{ $value }}%."

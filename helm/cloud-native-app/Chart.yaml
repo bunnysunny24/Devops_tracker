@@ -1,0 +1,14 @@
+apiVersion: v2
+name: cloud-native-app
+description: Helm chart for Automated Cloud-Native Application Deployment with Monitoring
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: DevOps Engineering Team
+keywords:
+  - cloud-native
+  - prometheus
+  - grafana
+  - kubernetes
+  - fastapi

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloud-native-app.fullname" . }}
+  labels:
+    {{- include "cloud-native-app.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cloud-native-app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cloud-native-app.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: {{ .Values.monitoring.scrape | quote }}
+        prometheus.io/path: {{ .Values.monitoring.path | quote }}
+        prometheus.io/port: {{ .Values.monitoring.port | quote }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: APP_NAME
+              value: {{ .Values.env.appName | quote }}
+            - name: APP_ENV
+              value: {{ .Values.env.appEnv | quote }}
+            - name: APP_VERSION
+              value: {{ .Values.env.appVersion | quote }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

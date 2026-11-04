@@ -1,0 +1,22 @@
+global:
+  resolve_timeout: 2m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 2h
+  receiver: 'default-webhook'
+
+receivers:
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://localhost:5001/'
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev']

@@ -1,0 +1,67 @@
+name: Cloud-Native CD Pipeline (Continuous Deployment)
+
+on:
+  workflow_run:
+    workflows: ["Cloud-Native CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes Cluster
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          echo "Applying Namespace..."
+          kubectl apply -f k8s/00-namespace.yaml
+
+          echo "Applying ConfigMap & Secrets..."
+          kubectl apply -f k8s/01-configmap-secret.yaml
+
+          echo "Applying Deployment with Zero-Downtime Rolling Update..."
+          kubectl apply -f k8s/02-app-deployment.yaml
+
+          echo "Applying Service & Ingress..."
+          kubectl apply -f k8s/03-app-service.yaml
+          kubectl apply -f k8s/04-ingress.yaml
+
+          echo "Applying Horizontal Pod Autoscaler..."
+          kubectl apply -f k8s/05-hpa.yaml
+
+          echo "Deploying Monitoring Stack (Prometheus & Grafana)..."
+          kubectl apply -f k8s/06-prometheus-k8s.yaml
+          kubectl apply -f k8s/07-grafana-k8s.yaml
+
+      - name: Verify Deployment Rollout & Healthcheck
+        run: |
+          echo "Waiting for Deployment rollout to complete..."
+          kubectl rollout status deployment/cloud-native-app -n cloud-native --timeout=120s
+
+          echo "Checking Pod status..."
+          kubectl get pods -n cloud-native -o wide
+
+          echo "Checking Service status..."
+          kubectl get svc -n cloud-native
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Triggering automatic rollback to previous stable replica..."
+          kubectl rollout undo deployment/cloud-native-app -n cloud-native
+          kubectl rollout status deployment/cloud-native-app -n cloud-native

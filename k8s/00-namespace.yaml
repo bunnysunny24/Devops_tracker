@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-native
+  labels:
+    app.kubernetes.io/name: cloud-native-suite
+    environment: production

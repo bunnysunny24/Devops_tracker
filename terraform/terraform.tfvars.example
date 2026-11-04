@@ -1,0 +1,8 @@
+region              = "us-east-1"
+cluster_name        = "cloud-native-prod-cluster"
+environment         = "production"
+vpc_cidr            = "10.0.0.0/16"
+node_instance_types = ["t3.medium"]
+desired_nodes       = 3
+min_nodes           = 2
+max_nodes           = 6
